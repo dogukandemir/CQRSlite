@@ -3,30 +3,181 @@
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/gautema/CQRSLite?branch=master&svg=true)](https://ci.appveyor.com/project/gautema/CQRSLite)
 [![NuGet](https://img.shields.io/nuget/vpre/cqrslite.svg)](https://www.nuget.org/packages/cqrslite)
 
-## The framework
-CQRSlite is a small CQRS and Eventsourcing Framework. It is written in C# and targets .NET 4.5.2 and .NET Core. CQRSlite originated as a CQRS sample project Greg Young and I did in the autumn of 2010.
-This code is located at http://github.com/gregoryyoung/m-r
+A lightweight CQRS and Event Sourcing framework for .NET
 
-CQRSlite has been made with pluggability in mind. So every standard implementation should be interchangeable with a custom one if needed.
+## Overview
 
-## Getting started
-A sample project is located with the code, this shows a common usage scenario of the framework. There are some features of CQRSlite, such as snapshotting that the sample does not show. These features are only documented through the tests.
+CQRSlite is a small, focused CQRS (Command Query Responsibility Segregation) and Event Sourcing framework for .NET. It provides the essential building blocks for implementing CQRS/ES patterns while maintaining flexibility and pluggability.
 
-Great introductions to CQRS and CQRSlite have been written by others. Here are two recommended:
-* <https://www.codeproject.com/articles/991648/cqrs-a-cross-examination-of-how-it-works>
-* <https://exceptionnotfound.net/real-world-cqrs-es-with-asp-net-and-redis-part-1-overview/>
+**Key Characteristics:**
+- Minimal dependencies (only Microsoft.Extensions.Caching.Memory)
+- Targets netstandard2.0 and net9.0
+- Convention-based event application with performance optimization
+- Pluggable architecture - replace any component with custom implementations
+- Thread-safe caching and repository decorators
+
+CQRSlite originated as a CQRS sample project by Greg Young and Gaute Magnussen in 2010. Original code: http://github.com/gregoryyoung/m-r
 
 ## Features
-* Command sending and event publishing
-* Unit of work through session with aggregate tracking
-* Repository for getting and saving aggregates
-* Optimistic concurrency checking
-* Message router with auto registration of handlers
-* Snapshotting
-* Caching with concurrency checks and updating to latest version
 
-## Installation
-To install CQRSlite, it you could either download the files and copy whats needed into your project, you can clone this project and reference it, or you can download releases from nuget. You will have to implement your own eventstore or use an exsiting eventstore with an adapter to fit the IEventStore interface.
+- **Command Sending** - Dispatch commands to handlers with 1:1 routing
+- **Event Publishing** - Publish events to multiple handlers (1:N routing)
+- **Query Processing** - Process queries with typed results
+- **Unit of Work** - Session-based aggregate tracking for consistency
+- **Repository Pattern** - Get and save aggregates with event sourcing
+- **Optimistic Concurrency** - Built-in concurrency checking and conflict detection
+- **Message Router** - Automatic handler registration via reflection
+- **Snapshotting** - Performance optimization for aggregates with many events
+- **Caching** - Thread-safe caching layer with automatic invalidation
+
+## Quick Start
+
+### Installation
+
+```bash
+dotnet add package CQRSlite
+```
+
+### Basic Usage
+
+1. **Define your messages:**
+
+```csharp
+// Command
+public class CreateProduct : ICommand
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+
+// Event
+public class ProductCreated : IEvent
+{
+    public Guid Id { get; set; }
+    public int Version { get; set; }
+    public DateTimeOffset TimeStamp { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+2. **Create your aggregate:**
+
+```csharp
+public class Product : AggregateRoot
+{
+    private string _name;
+    private decimal _price;
+
+    public Product(Guid id, string name, decimal price)
+    {
+        Id = id;
+        ApplyChange(new ProductCreated(id, name, price));
+    }
+
+    private Product() { } // Required for rehydration
+
+    private void Apply(ProductCreated e)
+    {
+        _name = e.Name;
+        _price = e.Price;
+    }
+}
+```
+
+3. **Implement handlers:**
+
+```csharp
+public class ProductCommandHandler : ICommandHandler<CreateProduct>
+{
+    private readonly ISession _session;
+
+    public async Task Handle(CreateProduct message)
+    {
+        var product = new Product(message.Id, message.Name, message.Price);
+        await _session.Add(product);
+        await _session.Commit();
+    }
+}
+```
+
+4. **Configure services:**
+
+```csharp
+// Register Router
+var router = new Router();
+services.AddSingleton(router);
+services.AddSingleton<ICommandSender>(router);
+services.AddSingleton<IEventPublisher>(router);
+services.AddSingleton<IHandlerRegistrar>(router);
+
+// Register core services
+services.AddSingleton<IEventStore, YourEventStore>(); // You must implement this
+services.AddScoped<IRepository>(sp => new Repository(sp.GetService<IEventStore>()));
+services.AddScoped<ISession, Session>();
+
+// Auto-register handlers
+var registrar = new RouteRegistrar(serviceProvider);
+registrar.Register(typeof(ProductCommandHandler).Assembly);
+```
+
+## Documentation
+
+- **[Developer Documentation](./DEVELOPER.md)** - Comprehensive guide covering architecture, implementation patterns, best practices, and testing
+- **[API Reference](./API_REFERENCE.md)** - Complete API documentation for all interfaces and classes
+- **[Sample Project](./Sample/)** - Working example demonstrating common usage patterns
+
+## External Resources
+
+Great introductions to CQRS and CQRSlite:
+- [CQRS: A Cross-Examination of How It Works](https://www.codeproject.com/articles/991648/cqrs-a-cross-examination-of-how-it-works)
+- [Real-World CQRS ES with ASP.NET and Redis](https://exceptionnotfound.net/real-world-cqrs-es-with-asp-net-and-redis-part-1-overview/)
+
+## Requirements
+
+You **must** implement your own `IEventStore` for persistence. CQRSlite provides the framework but intentionally does not include a default event store implementation, as storage requirements vary greatly between applications.
+
+Example event stores:
+- SQL Server / PostgreSQL / MySQL
+- NoSQL databases (MongoDB, CosmosDB)
+- Event Store DB
+- Azure Table Storage
+- In-memory (for testing, included in sample)
+
+See [DEVELOPER.md](./DEVELOPER.md#implementing-event-store) for implementation guidance.
+
+## Architecture
+
+CQRSlite follows clean CQRS/ES principles:
+
+```
+Application Layer
+    ↓
+Commands → CommandHandlers → Aggregates → Events → EventStore
+    ↓                                          ↓
+Queries → QueryHandlers → ReadModels ← EventHandlers
+```
+
+**Write Side (Commands):**
+- Commands express intent to change state
+- Aggregates enforce business rules
+- Events record what happened
+- Event store persists events
+
+**Read Side (Queries):**
+- Events update denormalized read models
+- Queries read from optimized projections
+- Eventually consistent with write side
+
+## Contributing
+
+Contributions are welcome! Please see [DEVELOPER.md](./DEVELOPER.md#contributing) for guidelines.
+
+## Version Compatibility
+
+- **netstandard2.0** - Compatible with .NET Framework 4.6.1+ and .NET Core 2.0+
+- **net9.0** - Latest .NET features and performance improvements
 
 ## License
 Copyright 2020 Gaute Magnussen
