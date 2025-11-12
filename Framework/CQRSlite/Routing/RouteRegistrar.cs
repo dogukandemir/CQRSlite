@@ -79,14 +79,14 @@ namespace CQRSlite.Routing
             Func<object, CancellationToken, Task> func;
             if (IsCancellable(@interface))
             {
-                var methodname = executorType.GetImplementationNameOfInterfaceMethod(@interface, "Handle", messageType,
+                var methodName = executorType.GetImplementationNameOfInterfaceMethod(@interface, "Handle", messageType,
                     typeof(CancellationToken));
 
                 func = (msg, token) =>
                 {
                     var handler = _serviceLocator.GetService(executorType) ?? 
                         throw new HandlerNotResolvedException(executorType.Name);
-                    return (Task) (handler.Invoke(methodname, msg, token) ??
+                    return (Task) (handler.Invoke(methodName, msg, token) ??
                                    throw new ResolvedHandlerMethodNotFoundException(executorType.Name));
                 };
             }

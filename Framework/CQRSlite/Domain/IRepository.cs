@@ -23,9 +23,9 @@ namespace CQRSlite.Domain
         /// Fetches aggregate
         /// </summary>
         /// <typeparam name="T">Type of aggregate</typeparam>
-        /// <param name="aggregateId">Id of aggregate</param>
+        /// <param name="aggregateId">ID of aggregate</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>Task with aggregate as result</returns>
+        /// <returns>Task with aggregate as a result</returns>
         Task<T> Get<T>(Guid aggregateId, CancellationToken cancellationToken = default) where T : AggregateRoot;
     }
 }

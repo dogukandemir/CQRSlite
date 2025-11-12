@@ -3,7 +3,7 @@
 namespace CQRSlite.Snapshotting
 {
     /// <summary>
-    /// A memento object of a aggregate in a version.
+    /// A memento object of an aggregate in a version.
     /// </summary>
     public abstract class Snapshot
     {

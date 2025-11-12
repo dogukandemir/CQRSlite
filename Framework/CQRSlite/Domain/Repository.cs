@@ -20,10 +20,7 @@ namespace CQRSlite.Domain
         /// Initialize Repository
         /// </summary>
         /// <param name="eventStore">EventStore to get events from</param>
-        public Repository(IEventStore eventStore)
-        {
-            _eventStore = eventStore ?? throw new ArgumentNullException(nameof(eventStore));
-        }
+        public Repository(IEventStore eventStore) => _eventStore = eventStore ?? throw new ArgumentNullException(nameof(eventStore));
 
         /// <summary>
         /// Initialize Repository with publisher that sends all saved events to handlers.
@@ -44,7 +41,7 @@ namespace CQRSlite.Domain
             {
                 throw new ConcurrencyException(aggregate.Id);
             }
-            else if(expectedVersion == null)
+            if(expectedVersion == null)
             {
                 var savedChanges = await _eventStore.Get(aggregate.Id, aggregate.Version, cancellationToken).ConfigureAwait(false);
                 aggregate.LoadFromHistory(savedChanges);

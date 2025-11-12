@@ -17,16 +17,15 @@ namespace CQRSlite.Caching
         private readonly IEventStore _eventStore;
         private readonly ICache _cache;
 
-        private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _locks =
-            new ConcurrentDictionary<Guid, SemaphoreSlim>();
+        private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _locks = new();
 
-        private static SemaphoreSlim CreateLock(Guid _) => new SemaphoreSlim(1, 1);
+        private static SemaphoreSlim CreateLock(Guid _) => new(1, 1);
 
         /// <summary>
         /// Initialize a new instance of CacheRepository
         /// </summary>
-        /// <param name="repository">Reposiory that gets aggregate from event store</param>
-        /// <param name="eventStore">Eventstore where concurrency checking can be fetched from</param>
+        /// <param name="repository">Repository that gets aggregate from event store</param>
+        /// <param name="eventStore">EventStore where concurrency checking can be fetched from</param>
         /// <param name="cache">Implementation of the cache</param>
         public CacheRepository(IRepository repository, IEventStore eventStore, ICache cache)
         {

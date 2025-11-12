@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 namespace CQRSlite.Domain
 {
     /// <summary>
-    /// Defines unit of work that handles several aggregates.
+    /// Defines a unit of work that handles several aggregates.
     /// </summary>
     public interface ISession
     {
         /// <summary>
-        /// Add aggregate to session
+        /// Add aggregate to the session
         /// </summary>
         /// <typeparam name="T">Type of aggregate</typeparam>
         /// <param name="aggregate">Aggregate object to be added</param>
@@ -19,7 +19,7 @@ namespace CQRSlite.Domain
         Task Add<T>(T aggregate, CancellationToken cancellationToken = default) where T : AggregateRoot;
 
         /// <summary>
-        /// Get aggregate from session.
+        /// Get aggregate from the session.
         /// </summary>
         /// <typeparam name="T">Type of aggregate</typeparam>
         /// <param name="id">Id of aggregate</param>
@@ -29,7 +29,7 @@ namespace CQRSlite.Domain
         Task<T> Get<T>(Guid id, int? expectedVersion = null, CancellationToken cancellationToken = default) where T : AggregateRoot;
 
         /// <summary>
-        /// Save changes in all aggregates in session
+        /// Save changes in all aggregates in the session
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns></returns>

@@ -25,7 +25,7 @@ namespace CQRSlite.Snapshotting
             {
                 if (aggregateType.GetTypeInfo().BaseType == null) return false;
                 if (aggregateType.GetTypeInfo().BaseType.GetTypeInfo().IsGenericType && 
-                    aggregateType.GetTypeInfo().BaseType.GetGenericTypeDefinition() == typeof(SnapshotAggregateRoot<>)) 
+                    aggregateType.GetTypeInfo().BaseType?.GetGenericTypeDefinition() == typeof(SnapshotAggregateRoot<>)) 
                     return true;
                 aggregateType = aggregateType.GetTypeInfo().BaseType;
             }
